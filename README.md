@@ -1,5 +1,5 @@
 
-# [Django_Study 저장소](https://github.com/resquez/Django_Study)
+# [Django_Study](https://github.com/resquez/Django_Study)
 
 ## Django 데모 프로젝트
 
