@@ -1,0 +1,69 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>글 작성</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        function writeCheck(event) {
+            var title = document.write_frm.title.value;
+            var content = document.write_frm.content.value;
+            var file = document.write_frm.file.value;
+
+            if (title === "") {
+                alert("제목을 입력해주세요");
+                document.write_frm.title.focus();
+                event.preventDefault(); // 폼 제출 막기
+                return false;
+            } else if (content === "") {
+                alert("작성할 내용을 입력해주세요");
+                document.write_frm.content.focus();
+                event.preventDefault(); // 폼 제출 막기
+                return false;
+            } else if (file !== "" && !file.match(/\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx)$/i)) {
+                alert("허용되지 않은 파일 형식입니다.");
+                event.preventDefault(); // 폼 제출 막기
+                return false;
+            }
+            return true;
+        }
+    </script>
+</head>
+<body>
+    <h1 align='center'>글을 써보자</h1>
+    <form method="POST" action="{% url 'board:board_write' %}" name="write_frm" enctype="multipart/form-data" onsubmit="return writeCheck(event);">
+        {% csrf_token %}
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <script>alert('{{ message }}')</script>
+            </div>
+        {% endfor %}
+        {% endif %}
+        <table align='center' border='1'>
+            <tr>
+                <td>제목</td>
+                <td><input type='text' name='title' size='93' placeholder='제목을 입력해 주세요.'></td>
+            </tr>
+            <tr>
+                <td align='center' colspan='2'>내용</td>
+            </tr>
+            <tr>
+                <td colspan='2'>
+                    <textarea name='content' cols="100" rows='30' maxlength='5000' placeholder='내용을 입력해 주세요.' style='resize:none;'></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td>파일 첨부</td>
+                <td><input type="file" name="file"></td>
+            </tr>
+            <tr>
+                <td align='center' colspan='2'>
+                    <input type='submit' value='글 등록'>
+                    <input type='reset' value='초기화'>
+                    <input type='button' value='글 목록' onclick="location.href='/board'">
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>

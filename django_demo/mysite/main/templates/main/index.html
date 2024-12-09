@@ -1,0 +1,26 @@
+<!--경로 mysite/main/templates/main/index.html-->
+<!--애플리케이션 이름 main-->
+<!DOCTYPE html>
+<html>
+    <h1>MAIN PAGE</h1>
+    <body>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <script>alert('{{ message }}')</script>
+                </div>
+            {% endfor %}
+        {% endif %} 
+        <!-- 로그인 상태에 따라 다르게 표시 -->
+        {% if request.session.email%}
+            <p>Email: {{ request.session.email }}</p> 
+            <p>name: {{ request.session.name }}</p> 
+            <button onclick="window.location.href='{% url 'board:board_list' %}'">게시판</button>
+            <button onclick="window.location.href='{% url 'accounts:logout' %}'">로그아웃</button>
+        {% else %}
+            <button onclick="window.location.href='{% url 'accounts:register' %}'">회원가입</button>
+            <button onclick="window.location.href='{% url 'accounts:login' %}'">로그인_1</button>
+            <button onclick="window.location.href='{% url 'accounts:login2' %}'">로그인_2</button>
+        {% endif %}
+    </body>
+</html>

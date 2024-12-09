@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>게시판</title>
+    <style>
+        /* 전체 너비 조정 및 중앙 정렬 */
+        .container {
+            max-width: 800px; /* 원하는 게시판 폼의 최대 너비 */
+            margin: 0 auto;
+        }
+
+        /* 상단의 버튼과 검색 영역을 한 줄에 배치 */
+        .toolbar {
+            display: flex;
+            justify-content: space-between; /* 좌우로 정렬 */
+            align-items: center; /* 세로축 정렬 */
+            margin-bottom: 20px;
+        }
+
+        /* 왼쪽 버튼 그룹 스타일 */
+        .button-group input, 
+        .search-form button {
+            padding: 5px 10px; /* 버튼 내부 여백 줄이기 */
+            font-size: 12px; /* 글자 크기 줄이기 */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .button-group input:hover,
+        .search-form button:hover {
+            background-color: #e2e6ea;
+        }
+
+        /* 검색 폼 스타일 */
+        .search-form {
+            display: flex;
+            gap: 8px; /* 입력창과 버튼 간격 */
+        }
+
+        .search-form input[type="text"] {
+            padding: 5px; /* 입력창 내부 여백 줄이기 */
+            font-size: 12px; /* 글자 크기 줄이기 */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* 게시글 테이블 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        table th {
+            background-color: rgb(237, 237, 237);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <script>alert('{{ message }}')</script>
+            </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if request.session.email %}
+            <p align="right">
+                {{request.session.email}}
+            </p>
+        {% else %}
+            <p align="right">
+                비회원
+            </p>
+        {% endif %}
+        
+        <h1 align="center">게시판 목록</h1>
+        
+        <div class="toolbar">
+            <!-- 왼쪽 버튼 그룹 -->
+            <div class="button-group">
+                <input type="button" value="홈페이지로.." onclick="location.href='{% url 'main:main' %}'">
+                <input type="button" value="글 작성" onclick="location.href='{% url 'board:board_write' %}'">
+            </div>
+            
+            <!-- 오른쪽 검색 폼 -->
+            <div class="search-form">
+                <form method="get" action="{% url 'board:board_list' %}">
+                    <input type="text" name="q" placeholder="검색어를 입력하세요">
+                    <button type="submit">검색</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 게시글 출력 -->
+        <table>
+            <tr>
+                <th style="width: 60px;">글 번호</th>
+                <th style="width: 400px;">제목</th>
+                <th style="width: 200px;">작성자</th>
+                <th style="width: 100px;">작성일</th>
+            </tr>
+            {% for board in boards %}
+            <tr>
+                <td align="center">{{ board.0 }}</td>
+                <td><a href="view?b_num={{ board.0 }}">{{ board.1 }}</a></td>
+                <td align="center">{{ board.2 }}</td>
+                <td align="center">{{ board.3.date|date:'Y-m-d' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

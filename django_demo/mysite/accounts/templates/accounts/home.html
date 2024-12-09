@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<head>
+    <title>회원 목록</title>
+</head>
+<body>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <script>alert('{{ message }}')</script>
+            </div>
+        {% endfor %}
+    {% endif %} 
+    <h1>회원 목록</h1>
+    {% if user %}
+        {% for user in users %}
+            <li>{{ user.name }} {{ user.email }} {{ user.password }}</li>
+        {% endfor %}
+    {% else %}
+        <p>회원 없음</p>
+    {% endif %}
+</body>
+</html>
