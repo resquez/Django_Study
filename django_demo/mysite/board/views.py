@@ -4,6 +4,7 @@ from .models import Board
 from django.contrib import messages
 from django.urls import reverse
 from django.conf import settings
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def board_write(request):
     # 로그인한 사용자가 접근했을 경우 허용
@@ -73,8 +74,24 @@ def board_list(request):
     cursor.execute(sql)
     boards = cursor.fetchall()
 
+    # 페이징 처리
+    page = request.GET.get('page', 1)  # 현재 페이지 번호 (기본값: 1)
+    paginator = Paginator(boards, 10)  # 페이지당 10개의 게시글
+
+    try:
+        paginated_boards = paginator.page(page)
+    except PageNotAnInteger:
+        # 페이지 번호가 정수가 아닌 경우, 첫 페이지 반환
+        paginated_boards = paginator.page(1)
+    except EmptyPage:
+        # 페이지 번호가 범위를 초과하는 경우, 마지막 페이지 반환
+        paginated_boards = paginator.page(paginator.num_pages)
+
     # 템플릿 렌더링
-    return render(request, 'board/list.html', {'boards': boards, 'query': query})
+    return render(request, 'board/list.html', {
+        'boards': paginated_boards,
+        'query': query
+    })
 
 def board_view(request):
     if request.GET.get('b_num'):

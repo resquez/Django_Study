@@ -2,12 +2,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models,connection
 from .managers import CustomUserManager
-import pymysql
 
 class CustomUser(AbstractUser):  #
     name = models.CharField(max_length=100) 
     email = models.EmailField(unique=True)
-    # password = models.CharField(max_length=100) # 기본 제공
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
 
 
     USERNAME_FIELD = 'email'
@@ -23,7 +22,11 @@ def Login_Check(**dic):
     email = dic['email']
     password = dic['password']
 
-    query = "SELECT email,password,name FROM users WHERE email = '" + email + "' AND password = '" + password + "'"
+    query = f"""
+        SELECT email, password, name, profile_image
+        FROM users
+        WHERE email = '{email}' AND password = '{password}'
+    """
 
     with connection.cursor() as cursor:
         cursor.execute(query)
@@ -36,7 +39,12 @@ pass
 
 def Login_Check2(**dic):
     email = dic['email']
-    query = f"SELECT email,password,name FROM users WHERE email = '{email}'"
+    query = f"""
+        SELECT email, password, name, profile_image
+        FROM users
+        WHERE email = '{email}'
+    """
+
     with connection.cursor() as cursor:
         cursor.execute(query)
         #result = cursor.fetchone()

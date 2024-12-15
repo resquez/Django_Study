@@ -167,6 +167,17 @@
             </tr>
         </table>
 
+        <!-- 버튼 그룹 -->
+        <div class="button-group">
+            {% if email == request.session.email %}
+                <!-- 로그인된 이메일과 작성자 이메일이 일치할 경우 -->
+                <input type="button" value="글 수정" onclick="location.href='update?b_num={{ b_num }}'">
+                <input type="button" value="글 삭제" onclick="location.href='delete?b_num={{ b_num }}'">
+            {% endif %}
+            <!-- 글 목록 버튼은 항상 활성화 -->
+            <input type="button" value="글 목록" onclick="location.href='/board'">
+        </div>
+
         <!-- 댓글 섹션 -->
         <div class="comment-section">
             <h3>댓글 ({{ comment_count }})</h3>
@@ -183,7 +194,7 @@
                     {% if comment.2 == request.session.email %}
                     <div class="comment-actions">
                         <button class="small-btn" onclick="toggleEditForm({{ comment.0 }})">수정</button>
-                        <form method="POST" action="/board/comment/delete/?comment_id={{ comment.0 }}&b_num={{ b_num }}" style="display: inline;">
+                        <form method="POST" action="{% url 'board:delete_comment' %}?comment_id={{ comment.0 }}&b_num={{ b_num }}" style="display: inline;">
                             {% csrf_token %}
                             <button type="submit" class="small-btn">삭제</button>
                         </form>
@@ -193,21 +204,18 @@
                 <div id="comment-content-{{ comment.0 }}" class="comment-content">{{ comment.1 }}</div>
                 
                 <!-- 댓글 수정 폼 -->
-                <form id="edit-form-{{ comment.0 }}" method="POST" action="/board/comment/update/?comment_id={{ comment.0 }}&b_num={{ b_num }}" style="display: none;">
+                <form id="edit-form-{{ comment.0 }}" method="POST" action="{% url 'board:update_comment' %}?comment_id={{ comment.0 }}&b_num={{ b_num }}" style="display: none;">
                     {% csrf_token %}
                     <textarea name="comment" rows="1" oninput="autoResizeTextarea(this)">{{ comment.1 }}</textarea>
                     <button type="submit">수정 완료</button>
                     <button type="button" onclick="toggleEditForm({{ comment.0 }})">취소</button>
-                    <input type="hidden" name="comment_id" value="{{ comment.0 }}">
-                    <input type="hidden" name="b_num" value="{{ b_num }}">
-
                 </form>
             </div>
             {% endfor %}
 
             <!-- 댓글 작성 폼 -->
             <div class="comment-form">
-                <form method="POST">
+                <form method="POST" action="{% url 'board:board_view' %}?b_num={{ b_num }}">
                     {% csrf_token %}
                     <textarea name="comment" rows="1" placeholder="댓글을 입력하세요" oninput="autoResizeTextarea(this)"></textarea>
                     <button type="submit">댓글 작성</button>
