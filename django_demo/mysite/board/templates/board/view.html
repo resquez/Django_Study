@@ -153,13 +153,13 @@
                 <th colspan="2">내용</th>
             </tr>
             <tr>
-                <td colspan="2">{{ content }}</td>
+                <td colspan="2">{{ content|safe }}</td>
             </tr>
             <tr>
                 <th>첨부 파일</th>
                 <td>
                     {% if file_url %}
-                        <a href="{{ file_url }}" download>{{ file_name|cut:"uploads/" }}</a>
+                        <a href="{{ file_url }}">{{ file_name }}</a>
                     {% else %}
                         첨부된 파일이 없습니다.
                     {% endif %}

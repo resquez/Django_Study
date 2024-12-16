@@ -110,6 +110,13 @@
     </style>
 </head>
 <body>
+    {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <script>alert('{{ message }}')</script>
+        </div>
+    {% endfor %}
+    {% endif %} 
     <div class="container"> 
         <!-- 상단 헤더 -->
         <div class="header">

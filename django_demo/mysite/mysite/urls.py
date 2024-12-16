@@ -7,7 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include("main.urls", namespace='main')),
     path('accounts/', include("accounts.urls", namespace='accounts')),
-    path('board/', include('board.urls', namespace='board'))
+    path('board/', include('board.urls', namespace='board')),
 ]       
 
 # 미디어 파일 서빙 설정 (개발 환경에서만)

@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect
 from django.db import connection
 from .models import CustomUser, Login_Check, Login_Check2
 from django.contrib import messages
-import os
 from django.conf import settings
+from django.http import HttpResponse, Http404
+from urllib.parse import unquote, urlencode
+import os
+import re
 
 def home(request):
     users = CustomUser.objects.all()
@@ -58,29 +61,26 @@ def login(request):
 
         if user_data is not None:
             try:
-                # 튜플 언패킹 (email, password, name, profile_image)
                 user_email, user_password, user_name, user_profile_image = user_data
 
-                # 세션에 사용자 정보 저장
+                # 세션 저장
                 request.session['email'] = user_email
                 request.session['name'] = user_name
 
-                # 프로필 이미지 경로 처리
+                # 프로필 이미지 경로 설정
                 if user_profile_image:
-                    request.session['profile_image'] = f"{settings.MEDIA_URL}{user_profile_image}"
+                    file_name = os.path.basename(user_profile_image)
+                    request.session['profile_image'] = f"/accounts/download?file={file_name}"
                 else:
-                    request.session['profile_image'] = "https://via.placeholder.com/120"  # 기본 이미지
+                    request.session['profile_image'] = "https://via.placeholder.com/120"
 
-                print(f"로그인 성공: {user_email}, 프로필 이미지: {request.session['profile_image']}")
+                messages.success(request, '로그인 성공!')
                 return redirect('main:main')
             except Exception as e:
-                print(f"예외 발생: {e}")
-                messages.error(request, '예기치 못한 오류가 발생했습니다. 다시 시도해주세요.')
-                return redirect('accounts:login')
+                print(f"로그인 중 오류 발생: {e}")
+                messages.error(request, '예기치 못한 오류가 발생했습니다.')
         else:
-            print("로그인 실패")
-            messages.error(request, '아이디 또는 비밀번호가 일치하지 않습니다.')
-            return redirect('accounts:login')
+            messages.error(request, '이메일 또는 비밀번호가 일치하지 않습니다.')
 
     return render(request, 'accounts/login.html')
 
@@ -94,107 +94,123 @@ def login2(request):
             'email': email,
             'password': password
         }
-
         user_data = Login_Check2(**login_data)
 
         if user_data is not None and user_data[1] == password:
             try:
-                # 튜플 언패킹 (email, password, name, profile_image)
                 user_email, user_password, user_name, user_profile_image = user_data
 
-                # 세션에 사용자 정보 저장
+                # 세션 저장
                 request.session['email'] = user_email
                 request.session['name'] = user_name
 
-                # 프로필 이미지 경로 처리
+                # 프로필 이미지 경로 설정
                 if user_profile_image:
-                    request.session['profile_image'] = f"{settings.MEDIA_URL}{user_profile_image}"
+                    file_name = os.path.basename(user_profile_image)
+                    request.session['profile_image'] = f"/accounts/download?file={file_name}"
                 else:
-                    request.session['profile_image'] = "https://via.placeholder.com/120"  # 기본 이미지
+                    request.session['profile_image'] = "https://via.placeholder.com/120"
 
-                print(f"로그인 성공: {user_email}, 프로필 이미지: {request.session['profile_image']}")
+                messages.success(request, '로그인 성공!')
                 return redirect('main:main')
             except Exception as e:
-                print(f"예외 발생: {e}")
-                messages.error(request, '예기치 못한 오류가 발생했습니다. 다시 시도해주세요.')
-                return redirect('accounts:login2')
+                print(f"로그인2 중 오류 발생: {e}")
+                messages.error(request, '예기치 못한 오류가 발생했습니다.')
         else:
-            print("로그인 실패")
-            messages.error(request, '아이디 또는 비밀번호가 일치하지 않습니다.')
-            return redirect('accounts:login2')
+            messages.error(request, '이메일 또는 비밀번호가 일치하지 않습니다.')
 
     return render(request, 'accounts/login2.html')
-
 
 def logout(request):
     if 'email' in request.session:
         del request.session['email']
         del request.session['name']
+        del request.session['profile_image']
         return redirect('main:main')
     
+# 마이페이지
 def mypage(request):
     if not request.session.get('email'):
-        messages.error(request, '로그인 후 접근 가능합니다.')
+        messages.error(request, '로그인이 필요합니다.')
         return redirect('accounts:login')
 
     return render(request, 'accounts/mypage.html', {
         'email': request.session.get('email'),
         'name': request.session.get('name'),
-        'profile_image': request.session.get('profile_image', "https://via.placeholder.com/120")
+        'profile_image': request.session.get('profile_image', "https://via.placeholder.com/120"),
     })
 
 
+
+# 프로필 이미지 업로드
 def upload_profile_image(request):
     if not request.session.get('email'):
-        messages.error(request, "로그인이 필요합니다.")
+        messages.error(request, '로그인이 필요합니다.')
         return redirect('accounts:login')
 
     if request.method == "POST":
-        profile_image = request.FILES.get("profile_image")  # 업로드된 파일 가져오기
-
+        profile_image = request.FILES.get("profile_image")
         if profile_image:
             try:
-                # 저장할 경로 설정
+                # 프로필 이미지 저장 경로 생성
                 upload_dir = os.path.join(settings.MEDIA_ROOT, 'profile_images')
                 os.makedirs(upload_dir, exist_ok=True)
 
-                # 파일명 생성 (계정명_profile)
+                # 파일명 생성
                 file_name = f"{request.session.get('email')}_profile.{profile_image.name.split('.')[-1]}"
                 file_path = os.path.join(upload_dir, file_name)
 
                 # 기존 파일 삭제
-                email = request.session.get('email')
                 cursor = connection.cursor()
-                select_sql = f"SELECT profile_image FROM users WHERE email = '{email}'"
-                cursor.execute(select_sql)
-                existing_profile_image = cursor.fetchone()
+                email = request.session.get('email')
+                cursor.execute(f"SELECT profile_image FROM users WHERE email = '{email}'")
+                existing_image = cursor.fetchone()
 
-                if existing_profile_image and existing_profile_image[0]:  # 기존 이미지가 존재하면 삭제
-                    existing_file_path = os.path.join(settings.MEDIA_ROOT, existing_profile_image[0])
+                if existing_image and existing_image[0]:
+                    existing_file_path = os.path.join(settings.MEDIA_ROOT, existing_image[0])
                     if os.path.exists(existing_file_path):
                         os.remove(existing_file_path)
 
-                # 파일 저장
+                # 새 파일 저장
                 with open(file_path, 'wb+') as destination:
                     for chunk in profile_image.chunks():
                         destination.write(chunk)
 
-                # 세션과 데이터베이스에 파일 경로 업데이트
+                # 세션 및 DB에 파일 경로 저장
                 profile_image_url = f"profile_images/{file_name}"
-                request.session['profile_image'] = f"{settings.MEDIA_URL}{profile_image_url}"
-                update_sql = f"UPDATE users SET profile_image = '{profile_image_url}' WHERE email = '{email}'"
-                cursor.execute(update_sql)
+                request.session['profile_image'] = f"/accounts/download?file={file_name}"
 
-                messages.success(request, "프로필 이미지가 성공적으로 업로드되었습니다.")
-                return redirect('accounts:mypage')
-
+                cursor.execute(
+                    f"UPDATE users SET profile_image = '{profile_image_url}' WHERE email = '{email}'"
+                )
+                messages.success(request, '프로필 이미지가 업데이트되었습니다.')
             except Exception as e:
-                print(f"파일 업로드 실패: {e}")
-                messages.error(request, "파일 업로드 중 오류가 발생했습니다.")
+                print(f"파일 업로드 중 오류 발생: {e}")
+                messages.error(request, '파일 업로드 중 오류가 발생했습니다.')
         else:
-            messages.error(request, "업로드할 이미지를 선택해 주세요.")
+            messages.error(request, '업로드할 파일을 선택하세요.')
 
     return redirect('accounts:mypage')
+
+
+# 파일 다운로드
+def download_file(request):
+    file_name = request.GET.get('file')
+    if not file_name:
+        raise Http404("파일 이름이 제공되지 않았습니다.")
+
+    # 파일 경로 설정
+    file_path = os.path.join(settings.MEDIA_ROOT, 'profile_images', file_name)
+
+    # 파일 응답 반환
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as file:
+            response = HttpResponse(file.read(), content_type="application/octet-stream")
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            return response
+    else:
+        raise Http404("파일이 존재하지 않습니다.")
+    
 
 def change_password(request):
     if not request.session.get('email'):
